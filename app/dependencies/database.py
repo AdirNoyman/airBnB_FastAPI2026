@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 from sqlmodel import Session, SQLModel, create_engine
 
-import models.models  # Import the models module to ensure that the model is registered with SQLModel, BEFORE creating the database tables. This is necessary because SQLModel needs to know about the models in order to create the corresponding tables in the database. If the models are not imported before creating the tables, SQLModel will not be aware of them and will not create the necessary tables.
+import app.models.room  # Import the models module to ensure that the model is registered with SQLModel, BEFORE creating the database tables. This is necessary because SQLModel needs to know about the models in order to create the corresponding tables in the database. If the models are not imported before creating the tables, SQLModel will not be aware of them and will not create the necessary tables.
 
 sqlite_file_name = "database.db"  # Name of the SQLite database file
 sqlite_url = f"sqlite:///{sqlite_file_name}"  # SQLite connection URL
