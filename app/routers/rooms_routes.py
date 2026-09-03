@@ -12,6 +12,7 @@ from DTOs.update_DTO import RoomUpdate
 
 router = APIRouter()
 
+
 RoomId = Annotated[int, Path(ge=1, description="The Id of the room to fetch")]
 
 
@@ -33,9 +34,8 @@ RooDependency = Annotated[Room, Depends(get_room_or_404)]
 
 # Annotated[Room, Query()] - This is a way to specify that the params argument should be of type Room and should be extracted from the query parameters of the request. The Query() function is used to indicate that the parameters should be taken from the query string of the URL.
 @router.get(
-    "/rooms",
+    "/",
     status_code=status.HTTP_200_OK,
-    tags=["Rooms"],
     summary="Get all rooms",
     description="Get all rooms with optional filtering by search term and maximum price",
     response_description="A list of rooms matching the search criteria",
@@ -60,9 +60,8 @@ def get_rooms(session: SessionDependency, params: Annotated[RoomDTO, Query()]):
 
 # GET a room
 @router.get(
-    "/rooms/{room_id}",
+    "/{room_id}",
     status_code=status.HTTP_200_OK,
-    tags=["Rooms"],
     summary="Get a specific room",
     description="Get a specific room by its ID",
     response_model=RoomResponse,
@@ -73,9 +72,8 @@ def get_room(room: RooDependency) -> Room:
 
 
 @router.post(
-    "/rooms",
+    "/",
     status_code=status.HTTP_201_CREATED,
-    tags=["Rooms"],
     response_model=RoomResponse,
 )
 def create_new_room(session: SessionDependency, room: RoomCreate) -> Room:
@@ -87,9 +85,8 @@ def create_new_room(session: SessionDependency, room: RoomCreate) -> Room:
 
 
 @router.patch(
-    "/rooms/{room_id}",
+    "/{room_id}",
     status_code=status.HTTP_200_OK,
-    tags=["Rooms"],
     summary="Update room data",
     description="Full or partial update of room data",
     response_model=RoomResponse,
@@ -107,9 +104,8 @@ def update_room(
 
 # DELETE a room
 @router.delete(
-    "/rooms/{room_id}",
+    "/{room_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=["Rooms"],
     summary="Delete a room",
     description="Permanently delete a room",
     response_description="The room was deleted successfully",

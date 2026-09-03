@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 
 from fastapi import (
+    Depends,
     FastAPI,
+    Request,
 )
 from fastapi.staticfiles import StaticFiles
 
@@ -16,6 +18,10 @@ openapi_tags = [
 ]
 
 
+def log_request(request: Request):
+    print(f"Request: {request.method} {request.url.path}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Code to run on startup
@@ -28,6 +34,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     lifespan=lifespan,
+    dependencies=[Depends(log_request)],
     title="Rent a room API",
     description="This is a simple API for renting rooms. You can create, read, update, and delete rooms using this API.",
     version="1.0.0",
@@ -36,5 +43,5 @@ app = FastAPI(
 )
 
 app.include_router(general_routes.router)
-app.include_router(rooms_routes.router)
+app.include_router(rooms_routes.router, prefix="/rooms", tags=["Rooms"])
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
