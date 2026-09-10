@@ -26,7 +26,7 @@ def log_request(request: Request):
 async def lifespan(app: FastAPI):
     # Code to run on startup
     print("Starting up 🚀...")
-    create_db_and_tables()  # Create the database tables on startup
+    await create_db_and_tables()  # Create the database tables on startup
     yield
     # Code to run on shutdown
     print("Shutting down 😴...")
@@ -42,6 +42,6 @@ app = FastAPI(
     openapi_tags=openapi_tags,
 )
 
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 app.include_router(general_routes.router)
 app.include_router(rooms_routes.router, prefix="/rooms", tags=["Rooms"])
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")

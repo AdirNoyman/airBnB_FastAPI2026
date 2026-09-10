@@ -12,15 +12,14 @@ from DTOs.update_DTO import RoomUpdate
 
 router = APIRouter()
 
-
 RoomId = Annotated[int, Path(ge=1, description="The Id of the room to fetch")]
 
 
-def get_room_or_404(
+async def get_room_or_404(
     session: SessionDependency,
     room_id: RoomId,
 ) -> Room:
-    room = session.get(Room, room_id)
+    room = await session.get(Room, room_id)
     if room:
         return room
     else:
@@ -30,6 +29,16 @@ def get_room_or_404(
 
 
 RooDependency = Annotated[Room, Depends(get_room_or_404)]
+
+IS_MAINTENANCE_MODE = False  # Set to True to simulate maintenance mode
+
+
+def check_maintenance_mode():
+    if IS_MAINTENANCE_MODE:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The service is temporarily unavailable due to maintenance.",
+        )
 
 
 # Annotated[Room, Query()] - This is a way to specify that the params argument should be of type Room and should be extracted from the query parameters of the request. The Query() function is used to indicate that the parameters should be taken from the query string of the URL.
@@ -41,7 +50,7 @@ RooDependency = Annotated[Room, Depends(get_room_or_404)]
     response_description="A list of rooms matching the search criteria",
 )
 # Query() - instruct FastAPI to look for the parameters in the query params
-def get_rooms(session: SessionDependency, params: Annotated[RoomDTO, Query()]):
+async def get_rooms(session: SessionDependency, params: Annotated[RoomDTO, Query()]):
 
     query = select(Room)
 
@@ -53,9 +62,10 @@ def get_rooms(session: SessionDependency, params: Annotated[RoomDTO, Query()]):
 
     query = query.limit(params.limit).offset(params.offset).order_by(col(Room.id))
 
-    filtered_rooms = session.exec(query).all()
+    result = await session.execute(query)
+    rooms = result.scalars().all()
 
-    return {"rooms": filtered_rooms}
+    return {"rooms": rooms, "count": len(rooms)}
 
 
 # GET a room
@@ -67,7 +77,7 @@ def get_rooms(session: SessionDependency, params: Annotated[RoomDTO, Query()]):
     response_model=RoomResponse,
     response_description="The room details",
 )
-def get_room(room: RooDependency) -> Room:
+async def get_room(room: RooDependency) -> Room:
     return room
 
 
@@ -75,12 +85,13 @@ def get_room(room: RooDependency) -> Room:
     "/",
     status_code=status.HTTP_201_CREATED,
     response_model=RoomResponse,
+    dependencies=[Depends(check_maintenance_mode)],
 )
-def create_new_room(session: SessionDependency, room: RoomCreate) -> Room:
+async def create_new_room(session: SessionDependency, room: RoomCreate) -> Room:
     db_room = Room(**room.model_dump())
     session.add(db_room)
-    session.commit()
-    session.refresh(db_room)
+    await session.commit()
+    await session.refresh(db_room)
     return db_room
 
 
@@ -92,13 +103,13 @@ def create_new_room(session: SessionDependency, room: RoomCreate) -> Room:
     response_model=RoomResponse,
     response_description="The updated room details",
 )
-def update_room(
+async def update_room(
     session: SessionDependency, room: RooDependency, update_data: RoomUpdate
 ) -> Room:
     room.sqlmodel_update(update_data.model_dump(exclude_unset=True))
     session.add(room)
-    session.commit()
-    session.refresh(room)
+    await session.commit()
+    await session.refresh(room)
     return room
 
 
@@ -110,6 +121,6 @@ def update_room(
     description="Permanently delete a room",
     response_description="The room was deleted successfully",
 )
-def delete_room(session: SessionDependency, room: RooDependency):
-    session.delete(room)
-    session.commit()
+async def delete_room(session: SessionDependency, room: RooDependency):
+    await session.delete(room)
+    await session.commit()
